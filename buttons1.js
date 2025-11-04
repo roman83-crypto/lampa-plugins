@@ -3,7 +3,6 @@ Lampa.Platform.tv();
     'use strict';
 
     function startPlugin() {
-        // Ініціалізація full_btn_priority
         if (Lampa.Storage.get('full_btn_priority') === undefined) {
             Lampa.Storage.set('full_btn_priority', '{}');
         }
@@ -14,10 +13,8 @@ Lampa.Platform.tv();
                     var fullContainer = e.object.activity.render();
                     var targetContainer = fullContainer.find('.full-start-new__buttons');
 
-                    // Видаляємо кнопку Play
                     fullContainer.find('.button--play').remove();
 
-                    // Усі кнопки
                     var allButtons = fullContainer.find('.buttons--container .full-start__button')
                         .add(targetContainer.find('.full-start__button'));
 
@@ -28,12 +25,11 @@ Lampa.Platform.tv();
 
                     var buttonOrder = [];
 
-                    // online → torrent → trailer
+                    // Порядок: online → torrent → trailer → інші
                     onlineButtons.each(function () { buttonOrder.push($(this)); });
                     torrentButtons.each(function () { buttonOrder.push($(this)); });
                     trailerButtons.each(function () { buttonOrder.push($(this)); });
 
-                    // Інші кнопки – клон
                     allButtons.filter(function () {
                         var cls = $(this).attr('class') || '';
                         return !cls.includes('online') && !cls.includes('torrent') && !cls.includes('trailer');
@@ -41,44 +37,66 @@ Lampa.Platform.tv();
                         buttonOrder.push($(this).clone(true));
                     });
 
-                    // Очищаємо контейнер
                     targetContainer.empty();
 
-                    /* ---------- СТИЛІ ДЛЯ ПЕРЕНОСУ ---------- */
+                    // === СТИЛІ КОНТЕЙНЕРА ===
                     targetContainer.css({
                         'display': 'flex',
                         'flex-wrap': 'wrap',
-                        'gap': '10px',
+                        'gap': '12px',
                         'justify-content': 'flex-start',
-                        'padding': '10px',
+                        'padding': '15px 10px',
                         'overflow': 'visible'
                     });
 
-                    /* ---------- ДОДАЄМО КНОПКИ З ПРАВИЛЬНИМ ТЕКСТОМ ---------- */
+                    // === ДОДАЄМО КНОПКИ З ПОСТІЙНИМ ТЕКСТОМ ===
                     buttonOrder.forEach(function ($button) {
-                        // 1. Отримуємо оригінальний текст
-                        var originalText = $button.data('name') || $button.text().trim();
+                        // 1. Отримуємо текст (з data-name або з тексту)
+                        var buttonText = $button.data('name') || $button.text().trim().split('\n')[0].trim();
 
-                        // 2. Шукаємо/створюємо єдиний span з текстом
-                        var $textSpan = $button.find('.full-start__button-text');
-                        if ($textSpan.length === 0) {
-                            $textSpan = $('<span class="full-start__button-text"></span>');
-                            $button.append($textSpan);
+                        // 2. Якщо data-name немає — зберігаємо для фокусу
+                        if (!$button.data('name')) {
+                            $button.attr('data-name', buttonText);
                         }
 
-                        // 3. Встановлюємо текст (видаляємо зайві \n, пробіли)
-                        $textSpan.text(originalText.replace(/\s+/g, ' ').trim());
+                        // 3. Очищаємо кнопку від зайвого
+                        $button.empty();
 
-                        // 4. Прибираємо будь-які текстові вузли поза span (дублі)
-                        $button.contents().filter(function () {
-                            return this.nodeType === 3 && this.nodeValue.trim() !== '';
-                        }).remove();
+                        // 4. Додаємо видимий текст (завжди!)
+                        var $label = $('<div class="button-label-visible"></div>');
+                        $label.text(buttonText);
+                        $button.append($label);
 
-                        // 5. Додаємо кнопку
+                        // 5. Додаємо іконку (якщо є)
+                        var $icon = $button.find('svg, img').clone();
+                        if ($icon.length) {
+                            $button.prepend($icon);
+                        }
+
+                        // 6. Додаємо в контейнер
                         targetContainer.append($button);
                     });
 
-                    // Увімкнути full_start
+                    // === ДОДАЄМО CSS ДЛЯ ВИДИМОГО ТЕКСТУ ===
+                    if (!$('#plugin-button-label-style').length) {
+                        $('head').append(
+                            '<style id="plugin-button-label-style">' +
+                            '.full-start__button {' +
+                                'position: relative; display: flex; align-items: center; justify-content: center; ' +
+                                'min-height: 50px; padding: 8px 16px; border-radius: 8px; overflow: visible;' +
+                            '}' +
+                            '.button-label-visible {' +
+                                'font-size: 14px; font-weight: 500; color: #fff; text-align: center; ' +
+                                'white-space: nowrap; pointer-events: none; z-index: 2;' +
+                            '}' +
+                            '.full-start__button:focus .button-label-visible,' +
+                            '.full-start__button:hover .button-label-visible {' +
+                                'color: #fff;' +
+                            '}' +
+                            '</style>'
+                        );
+                    }
+
                     Lampa.Controller.toggle("full_start");
 
                 }, 100);
