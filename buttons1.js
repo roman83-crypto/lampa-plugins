@@ -17,26 +17,57 @@ Lampa.Platform.tv();
 
                     fullContainer.find('.button--play').remove();
 
+                    // Додаємо стилі для перенесення кнопок на новий рядок
+                    if (!$('#custom-buttons-style').length) {
+                        $('<style id="custom-buttons-style">')
+                            .text(`
+                                .full-start-new__buttons {
+                                    display: flex !important;
+                                    flex-wrap: wrap !important;
+                                    gap: 10px !important;
+                                    justify-content: flex-start !important;
+                                }
+                                .full-start-new__buttons .full-start__button {
+                                    flex: 0 1 auto !important;
+                                    min-width: 150px !important;
+                                    max-width: calc(33.333% - 10px) !important;
+                                }
+                                @media (max-width: 768px) {
+                                    .full-start-new__buttons .full-start__button {
+                                        max-width: calc(50% - 10px) !important;
+                                    }
+                                }
+                            `)
+                            .appendTo('head');
+                    }
+
                     var allButtons = fullContainer.find('.buttons--container .full-start__button')
                         .add(targetContainer.find('.full-start__button'));
 
                     // Функція для додавання підпису до кнопки
                     function addLabel($button, text, color) {
-                        // Перевіряємо, чи вже є підпис
-                        if ($button.find('.button-label').length === 0) {
-                            var $label = $('<div class="button-label"></div>')
-                                .text(text)
-                                .css({
-                                    'font-size': '0.9em',
-                                    'color': color,
-                                    'margin-top': '0.3em',
-                                    'text-align': 'center',
-                                    'font-weight': 'bold',
-                                    'text-transform': 'uppercase',
-                                    'opacity': '0.8'
-                                });
-                            $button.append($label);
-                        }
+                        // Видаляємо всі існуючі текстові вузли та span з оригінальним текстом
+                        $button.contents().filter(function() {
+                            return this.nodeType === 3; // Текстові вузли
+                        }).remove();
+                        
+                        // Видаляємо всі span, які не є іконками
+                        $button.find('span').not('.full-start__icon').remove();
+                        
+                        // Видаляємо старі підписи
+                        $button.find('.button-label').remove();
+
+                        // Додаємо новий підпис
+                        var $label = $('<span class="button-label"></span>')
+                            .text(text)
+                            .css({
+                                'font-size': '1em',
+                                'color': color,
+                                'font-weight': 'bold',
+                                'text-transform': 'uppercase',
+                                'margin-left': '0.5em'
+                            });
+                        $button.append($label);
                     }
 
                     // Визначаємо категорії кнопок по наявності слів в класах
